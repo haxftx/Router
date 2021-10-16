@@ -1,0 +1,53 @@
+Router:
+Aplicatia consta in implementarea unui router, care asculta de la toate interfetele
+la care este conectat si primeste packete, pe care le gestioneaza mai departe.
+Cand primeste un packet verifica tipul sau, daca ether type este ARP sau IP,
+daca nu ii face drop. Pentru implentare routerul are nevoie de o tabela de 
+rutare care o citeste din fisierul rtable.txt, o tabela arp care o creeaza din
+packetele de tip arp, o coada de packete carora nu stim mac-l destinatiei.
+Pentru implentare am folostit structuri puse la dispozitie de linux, precum:
+ether_header, iphdr, icmphdr, ether_arp si Trout unde se afla datele de pe o
+linie din tabela de rutare , Tarp unde se afla ip si mac-l aflate prin arp
+request.
+Ca funtii auxiliare am folostit:
+    inet_ip() - converteste un ip dintr-un string im creaza ip intr-un uint32_t
+    ip_vec_to_int() - converteste un ip din 4 octeti uint8_t intr-un uint32_t
+    ip_int_to_vec() - converteste un ip dintr-un uint32_t in 4 octeti uint8_t
+    lineFile() - calculare numarul de linii din fisierul rtable.txt
+    setTrout() - converteste o linie din rtable.txt intr-o structura Trout
+    compareTrout() - compara 2 structuri de tip Trout, folostit la sortare
+    compareIp() - compara un Trout cu un ip in dependenta de mask, folostit
+                                                                la cautare
+    findRtable() - cautarea binara in tabela de rutare O(log n)
+    read_rtable() - citeste din fisierul rtable.txt si creaza tabela de rutare
+    ip_checksum() - calculeaza checksum, funtia din laborator
+    rfc_checksum() - calculeaza checksum ip conform algoritmului incremental
+    findArp() - cauta in tablea arp o adresa ip
+Functii de prelucrare a packetelor:
+    reply_icmp() - modifica campurile packetului setand-ul la un packet de tip
+                    reply icmp si-l trimite inapoi
+    send_icmp() - creeaza un packet si-l trimite inapoi cand avem time exceeded
+                    sau desination unreachable in dependenta de tipul lui.
+    send_arp_request() - creeaza un packet tip arp request pentru next hop-l
+                        gasit in tabela de rutare pentru a afla mac-l ip.
+    packet_ip() - se executa cand am un packet de tip ip, verific daca exista
+                    un ip in tabela de rutare sa-l trimit, daca este adresat
+                    unei din interfetele router-lui sau daca are ttl mai mic
+                    egal ca 1 si trimit respectiv mesajul de icmp inapoi
+                    folosind send_icmp() si reply_icmp()
+                  daca checksum este gresit arunc packetul, daca nu actualizez
+                  ttl si checksum din headerul de ip, dupa care caut in tabela
+                  arp ip de next hop, gasind-ul trimit packetul mai departe,
+                  daca nu salvez packetul in coada de packete si trimit un arp
+                  request catre ip-l de next hop
+    packet_arp() -  see executa cand am un packet de tip arp, verific tipul,
+                    daca este de tip request sau reply
+                    daca e de tip request raspund doar in cazul in care este
+                    adresat router-lui, actualizand packetul
+                    daca este reply, adaug in tabela arp ip-l si mac-l apoi
+                    extrac packetele din coada de packete si le trimit mai
+                    departe cunoscand mac-l.
+
+In struct.h sunt structurile si antetul functiilor.
+in arp_icmp.c sunt funtile de trimitere arp request si suport icmp.
+In function.c sunt funtii auxiliare.
